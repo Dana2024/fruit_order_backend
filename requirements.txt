@@ -1,4 +1,4 @@
-﻿python==3.6
+﻿python==3
 databases==0.5.2
 alchemy==20.5
 fastapi==0.100.1
