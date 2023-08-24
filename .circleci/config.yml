@@ -1,0 +1,53 @@
+version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@4.0.0
+
+jobs:
+  build:
+    docker:
+      - image: cimg/python:3.11.4
+    steps:
+      - checkout
+      - run: python 3.11.4
+      - run:
+          name: Install Dependencies
+          command: |
+            sudo apt-get update
+            sudo apt install -y python3-pip
+            pip3 install -r requirements.txt
+      - run:
+          name: Install Nginx
+          command: sudo apt install -y nginx 
+      - run:
+          name: Configure Nginx
+          command: |
+            echo "server {
+                listen 80;
+                server_name api_address;
+                location / {
+                    proxy_pass http://127.0.0.1:8000;
+                }
+            }" | sudo tee /etc/nginx/sites-enabled/fastapi_nginx
+
+      - run:
+          name: Restart Nginx
+          command: |
+            sudo service nginx restart
+
+      - run:
+          name: Start FastAPI Application
+          command: |
+            python3 -m uvicorn main:app --host 0.0.0.0 --port 8000
+      - run:
+          name: SSH into EC2 and Deploy
+          command: |
+            chmod 400 private-key.pem  
+            ssh -i private-key.pem ec2-user@instance-ip
+            cd /path/to/app && git pull &&          
+            sudo service nginx restart &&  
+            python3 -m uvicorn main:app --host 0.0.0.0 --port 8000  
+
+            
+            
+            
